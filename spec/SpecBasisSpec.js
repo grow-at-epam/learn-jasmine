@@ -78,6 +78,7 @@ describe("A suite is just a function grouping tests usually of a same module or 
                 }
             }
         }
+
         // Let's first see how to enable it.
         // jasmine.addMatchers takes a hash of matcher functions,
         jasmine.addMatchers({ largeEnoughThan });
@@ -107,7 +108,71 @@ describe("A suite is just a function grouping tests usually of a same module or 
                 }
             }
         }
+
         // Use it directly without installing to jasmine
         expect(2).toEqual(doubleOf(1));
+    });
+
+    // Suite can be nested.
+    describe("How to test asynchronous code", () => {
+        // If an argument is given when defining a spy, jasmine will pass a function (usually named done)
+        // to the spy at the time it's being executed. The callback should be invoked after the asynchronous work
+        // has been done and all the expectation statements have been executed. You could also call
+        // *callback.fail*(since 2.1) or *done(new Error("msg"))*(since 3.0) to mark the spy as failed.
+        // If none, either done() or done.fail(), is invoked there would be an timeout error after 5 seconds by default.
+        it("(1) use a callback function to test asynchronous code", (done) => {
+            setTimeout(() => {
+                done();
+                // Use *done.fail()* or *done(new Error("msg"))* to fail a spy manually if needed.
+                // done.fail();
+            }, 100);
+        });
+
+        // The default timeout value can be set by assigning a new value to jasmine.DEFAULT_TIMEOUT_INTERVAL,
+        // usually outside of the target *describe*.
+
+        // Similar to callback approach, if no resolve or reject is invoked within 5 seconds,
+        // this spy will fail with a timeout error.
+        it("(2) use promises to test asynchronous code", () => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve();
+                    // or fail this spy with
+                    // reject("error message");
+                }, 100);
+            });
+        });
+
+        // The third approach is to us async/await keywords.
+        // In the same way it's restricted by the timeout limitation 5 seconds by default.
+        it("(3) use async/await to test asynchronous code", async () => {
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve();
+                    // or fail this spy with
+                    // reject("error message");
+                }, 100);
+            });
+        });
+
+        // Another way to test asynchronous code is to wait some time if you know the maximum execution time
+        // of the asynchronous code. This wait can be done by calling *jasmine.clock().tick(<time>)*.
+        // However, you should first install before using it and uninstalled it afterwards.
+        it("(4) use clock to wait a specific period of time", () => {
+            // install
+            jasmine.clock().install();
+
+            const foo = jasmine.createSpy("foo");
+            setTimeout(foo, 100);
+            expect(foo).not.toHaveBeenCalled();
+
+            // wait
+            jasmine.clock().tick(100);
+
+            expect(foo).toHaveBeenCalled();
+
+            // uninstall
+            jasmine.clock().uninstall();
+        });
     });
 });
